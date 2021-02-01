@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os/exec"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,6 +22,7 @@ var (
 	channel_filter int
 	_bbsid_filter  string
 	bbsid_filter   net.HardwareAddr
+	channel        string
 
 	handle *pcap.Handle
 	err    error
@@ -67,6 +70,7 @@ func show_screen() {
 	for {
 		screen.Clear()
 		screen.MoveTopLeft()
+		fmt.Printf("\n CH %2s\n", channel)
 		fmt.Println("\n BSSID              PWR    Beacons   CH   ESSID\n")
 		for _, one := range beacon_list {
 			fmt.Printf(" %v  %3d     %6d   %2d   %s\n", one.bbsid, one.power, one.beacons, one.channel, one.essid)
@@ -92,6 +96,17 @@ func find_essid() { // Beacon list -> QoS list
 	}
 }
 
+func channel_hopping() {
+	for {
+		for num := 1; num <= 13; num++ {
+			channel = strconv.Itoa(num)
+			exec.Command("iwconfig", "mon0", "channel", channel).Start()
+
+			time.Sleep(time.Second * 2)
+		}
+	}
+}
+
 func main() {
 	iface := flag.String("i", "", "interface device name")
 	// channel_filter := flag.Int("c", 0, "channel")
@@ -106,6 +121,7 @@ func main() {
 	}
 	defer handle.Close()
 
+	go channel_hopping()
 	go sort_beacon_list() // Goroutine
 	go show_screen()
 
@@ -168,8 +184,6 @@ func main() {
 				continue
 			}
 
-			// fmt.Println(dot11info.Info)
-
 			var exist = false
 			for i, j := range beacon_list {
 				if beacon_list[i].bbsid.String() == src_address.String() {
@@ -179,11 +193,13 @@ func main() {
 				}
 			}
 
+			channel := packet.Layers()[5].LayerContents()[2]
+
 			if exist == false {
 				one := Beacon{}
 				one.bbsid = src_address
 				one.power = antenna_signal
-				one.channel = 1
+				one.channel = int8(channel)
 				one.beacons = 1
 
 				var essid = string(dot11info.Info)

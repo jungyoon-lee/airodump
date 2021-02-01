@@ -3,11 +3,11 @@
 ![](./image.png)
 ## Usage
 ```
-$ sudo ./main -i <interface_name>
-$ sudo ./main -i <interface_name> -bbsid <mac_address>
+$ sudo ./main -i <interface>
+$ sudo ./main -i <interface> -bbsid <mac_address>
 
-$ sudo go run main.go -i <interface_name>
-$ sudo go run main.go -i <interface_name> -bbsid <mac_address>
+$ sudo go run main.go -i <interface>
+$ sudo go run main.go -i <interface> -bbsid <mac_address>
 ```
 
 ## Install
